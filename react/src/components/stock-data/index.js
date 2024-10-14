@@ -15,6 +15,10 @@ export default function StockData() {
   }, []);
 
   const fetchStockData = useCallback(async () => {
+    // Clear previous data and errors
+    setStockData(null);
+    setError('');
+
     if (!inputDate) {
       setError('Please enter a date');
       return;
@@ -25,14 +29,14 @@ export default function StockData() {
       return;
     }
 
-    setError('');
-    setStockData(null);
-
     try {
       const response = await fetch(`${API_BASE_URL}?date=${inputDate}`);
       const { data } = await response.json();
-      setStockData(data[0] || null);
-      if (!data[0]) setError('No Results Found');
+      if (data && data.length > 0) {
+        setStockData(data[0]);
+      } else {
+        setError('No Results Found');
+      }
     } catch (error) {
       console.error('Error fetching stock data:', error);
       setError('An error occurred while fetching data');
@@ -65,7 +69,7 @@ export default function StockData() {
         </button>
       </section>
 
-      {stockData && (
+      {stockData && !error && (
         <ul
           className='mt-50 slide-up-fade-in styled'
           id='stockData'
@@ -81,7 +85,7 @@ export default function StockData() {
 
       {error && (
         <div
-          className='mt-50 slide-up-fade-in'
+          className='mt-50 slide-up-fade-in pa-20'
           id='no-result'
           data-testid='no-result'
         >
