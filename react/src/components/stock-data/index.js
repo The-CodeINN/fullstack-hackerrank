@@ -1,33 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import './index.css';
+
+const API_BASE_URL = 'https://jsonmock.hackerrank.com/api/stocks';
 
 export default function StockData() {
   const [inputDate, setInputDate] = useState('');
   const [stockData, setStockData] = useState(null);
-  const [noResult, setNoResult] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleInputChange = (event) => {
+  const isValidDate = useCallback((date) => {
+    const dateRegex =
+      /^(\d{1,2})-(January|February|March|April|May|June|July|August|September|October|November|December)-(\d{4})$/;
+    return dateRegex.test(date);
+  }, []);
+
+  const fetchStockData = useCallback(async () => {
+    if (!inputDate) {
+      setError('Please enter a date');
+      return;
+    }
+
+    if (!isValidDate(inputDate)) {
+      setError('Please enter a valid date in the format dd-mmmm-yyyy');
+      return;
+    }
+
+    setError('');
+    setStockData(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}?date=${inputDate}`);
+      const { data } = await response.json();
+      setStockData(data[0] || null);
+      if (!data[0]) setError('No Results Found');
+    } catch (error) {
+      console.error('Error fetching stock data:', error);
+      setError('An error occurred while fetching data');
+    }
+  }, [inputDate, isValidDate]);
+
+  const handleInputChange = useCallback((event) => {
     setInputDate(event.target.value);
-  };
-
-  const fetchStockData = () => {
-    fetch(`https://jsonmock.hackerrank.com/api/stocks?date=${inputDate}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.data && data.data.length > 0) {
-          setStockData(data.data[0]);
-          setNoResult(false);
-        } else {
-          setStockData(null);
-          setNoResult(true);
-        }
-      })
-      .catch((error) => {
-        console.error('Error fetching stock data:', error);
-        setStockData(null);
-        setNoResult(true);
-      });
-  };
+  }, []);
 
   return (
     <div className='layout-column align-items-center mt-50'>
@@ -57,20 +71,21 @@ export default function StockData() {
           id='stockData'
           data-testid='stock-data'
         >
-          <li className='py-10'>Open: {stockData.open}</li>
-          <li className='py-10'>Close: {stockData.close}</li>
-          <li className='py-10'>High: {stockData.high}</li>
-          <li className='py-10'>Low: {stockData.low}</li>
+          {['open', 'close', 'high', 'low'].map((key) => (
+            <li key={key} className='py-10'>
+              {key.charAt(0).toUpperCase() + key.slice(1)}: {stockData[key]}
+            </li>
+          ))}
         </ul>
       )}
 
-      {noResult && (
+      {error && (
         <div
           className='mt-50 slide-up-fade-in'
           id='no-result'
           data-testid='no-result'
         >
-          No Results Found
+          {error}
         </div>
       )}
     </div>
