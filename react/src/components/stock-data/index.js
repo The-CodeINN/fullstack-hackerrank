@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import './index.css';
 
 const API_BASE_URL = 'https://jsonmock.hackerrank.com/api/stocks';
@@ -7,18 +7,17 @@ export default function StockData() {
   const [inputDate, setInputDate] = useState('');
   const [stockData, setStockData] = useState(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const isValidDate = useCallback((date) => {
-    const dateRegex =
-      /^(\d{1,2})-(January|February|March|April|May|June|July|August|September|October|November|December)-(\d{4})$/;
-    return dateRegex.test(date);
-  }, []);
+  const dateRegex = useMemo(
+    () =>
+      /^(\d{1,2})-(January|February|March|April|May|June|July|August|September|October|November|December)-(\d{4})$/,
+    []
+  );
+
+  const isValidDate = useCallback((date) => dateRegex.test(date), [dateRegex]);
 
   const fetchStockData = useCallback(async () => {
-    // Clear previous data and errors
-    setStockData(null);
-    setError('');
-
     if (!inputDate) {
       setError('Please enter a date');
       return;
@@ -30,9 +29,14 @@ export default function StockData() {
     }
 
     try {
+      setLoading(true);
+      setError('');
+      setStockData(null);
+
       const response = await fetch(`${API_BASE_URL}?date=${inputDate}`);
       const { data } = await response.json();
-      if (data && data.length > 0) {
+
+      if (data?.length > 0) {
         setStockData(data[0]);
       } else {
         setError('No Results Found');
@@ -40,6 +44,8 @@ export default function StockData() {
     } catch (error) {
       console.error('Error fetching stock data:', error);
       setError('An error occurred while fetching data');
+    } finally {
+      setLoading(false);
     }
   }, [inputDate, isValidDate]);
 
@@ -64,10 +70,17 @@ export default function StockData() {
           id='submit-button'
           data-testid='submit-button'
           onClick={fetchStockData}
+          disabled={loading}
         >
-          Search
+          {loading ? 'Searching...' : 'Search'}
         </button>
       </section>
+
+      {loading && (
+        <div className='mt-50 slide-up-fade-in pa-20' data-testid='loading'>
+          Loading...
+        </div>
+      )}
 
       {stockData && !error && (
         <ul
