@@ -5,7 +5,7 @@ This repository contains two folders:
 #### 1. `nodejs`
 
 ```sh
-cd nodejs
+cd node-js
 ```
 
 Test
@@ -38,7 +38,7 @@ Create a module `queue.js` and implement the following functionalities:
 - The default interval for dequeuing items is set to 250ms initially.
 - Test cases should handle emitting the `interval` event with only positive numbers, so no validation on numbers is required.
 
-#### 2. `reactjs`
+#### 2. `react`
 
 ```sh
 cd react
